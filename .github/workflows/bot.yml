@@ -59,6 +59,7 @@ jobs:
           MAX_POSTS_PER_DAY: ${{ vars.MAX_POSTS_PER_DAY }}
           SORT: ${{ vars.SORT }}
           COMMUNITY: ${{ vars.COMMUNITY }}
+          SKIP_BENEFICIARY: ${{ vars.SKIP_BENEFICIARY }}
           KEYWORD_MIN: ${{ vars.KEYWORD_MIN }}
           COMMENT_LANG: ${{ vars.COMMENT_LANG }}
           EXTRA_KEYWORDS: ${{ secrets.EXTRA_KEYWORDS }}
