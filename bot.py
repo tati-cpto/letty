@@ -35,6 +35,10 @@ LLM_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{MODEL}:gene
 DRY_RUN = env("DRY_RUN", "true").lower() != "false"
 LOG_TEXT = env("LOG_TEXT", "false").lower() == "true"
 BLACKLIST = {a.strip().lower() for a in env("BLACKLIST").split(",") if a.strip()}
+# posts that list any of these accounts as a beneficiary are skipped entirely
+# (comma separated, "@" optional; leave empty to disable the filter)
+SKIP_BENEFICIARY = {b.strip().lstrip("@").lower()
+                    for b in env("SKIP_BENEFICIARY").split(",") if b.strip()}
 COMMUNITIES = [c.strip().lower() for c in env("COMMUNITY").split(",") if c.strip()]
 if not COMMUNITIES:
     raise SystemExit("COMMUNITY is not set")
@@ -159,6 +163,14 @@ def recent_posts():
                 seen.add(key)
                 out.append(p)
     return out
+
+
+def has_skipped_beneficiary(p):
+    """True if the post sets one of SKIP_BENEFICIARY as a beneficiary."""
+    if not SKIP_BENEFICIARY:
+        return False
+    return any((b.get("account") or "").lower() in SKIP_BENEFICIARY
+               for b in p.get("beneficiaries") or [])
 
 
 # ---------- topic relevance (community membership alone lets some off-topic posts through) ----------
@@ -379,6 +391,7 @@ def main():
     cands = [p for p in posts
              if p["author"].lower() not in BLACKLIST
              and p["author"] != ACCOUNT
+             and not has_skipped_beneficiary(p)  # leave these posts to the other bot
              and f"{p['author']}/{p['permlink']}" not in done_posts
              and ACCOUNT not in {v["voter"] for v in p.get("active_votes", [])}
              and now().timestamp() - state["last_comment"].get(p["author"], 0) > cool
